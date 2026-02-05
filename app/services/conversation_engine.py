@@ -250,13 +250,15 @@ def _ollama_cli_call(prompt: str) -> str:
 
 
 def generate_agent_reply(prompt: str) -> str:
+    print("OPEN ROUTER API KEY: ", settings.OPENROUTER_API_KEY)
     try:
         response = requests.post(
+
             "https://openrouter.ai/api/v1/chat/completions",
             headers={
                 "Authorization": f"Bearer {settings.OPENROUTER_API_KEY}",
                 "Content-Type": "application/json",
-                "HTTP-Referer": "https://your-project-name",  # required
+                "HTTP-Referer": "honeyPot",  # required
                 "X-Title": "Agentic Scam Honeypot",
             },
             json={
