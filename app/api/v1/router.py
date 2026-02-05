@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from api.v1 import honeypot
+from app.api.v1 import honeypot
 
 api_router = APIRouter()
 
