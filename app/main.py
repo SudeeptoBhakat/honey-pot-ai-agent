@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.v1.router import api_router
-from core.logging import setup_logging
+from app.core.logging import setup_logging
 
 app = FastAPI(
     title="Agentic Honeypot API",
