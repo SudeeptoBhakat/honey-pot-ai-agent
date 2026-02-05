@@ -3,6 +3,7 @@ import re
 import logging
 from typing import Dict, List
 from app.core.config import settings
+import requests
 
 logger = logging.getLogger(__name__)
 
@@ -107,6 +108,75 @@ Your response as the victim (1-2 sentences only):"""
 
     return prompt.strip()
 
+def _clean_llm_response(text: str) -> str:
+    """Sanitize and shorten LLM output"""
+    if not text:
+        return ""
+
+    # Remove AI self references
+    text = re.sub(
+        r"(as an ai|i am an ai|language model|i cannot|i can't|i'm an assistant)",
+        "",
+        text,
+        flags=re.IGNORECASE,
+    )
+
+    text = text.strip().strip('"\'`')
+
+    # Keep max first 2 sentences
+    sentences = re.split(r"[.!?]+", text)
+    text = ". ".join(sentences[:2]).strip()
+
+    # Hard length limit
+    if len(text) > 250:
+        text = text[:250].rsplit(" ", 1)[0] + "..."
+
+    return text
+
+
+def _ollama_api_call(prompt: str) -> str:
+    """Call Ollama via HTTP API (preferred)"""
+    url = "http://localhost:11434/api/generate"
+
+    payload = {
+        "model": 'llama3',
+        "prompt": prompt,
+        "stream": False,
+    }
+
+    response = requests.post(
+        url,
+        json=payload,
+        timeout=settings.LLM_TIMEOUT,
+    )
+
+    response.raise_for_status()
+    data = response.json()
+
+    return data.get("response", "").strip()
+
+
+def _ollama_cli_call(prompt: str) -> str:
+    """Fallback to CLI if API is unavailable"""
+    process = subprocess.Popen(
+        ["ollama", "run", settings.LLM_MODEL],
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        encoding="utf-8",
+        errors="ignore",
+    )
+
+    stdout, stderr = process.communicate(
+        prompt, timeout=settings.LLM_TIMEOUT
+    )
+
+    if stderr:
+        logger.warning(f"Ollama CLI stderr: {stderr}")
+
+    return stdout.strip()
+
 
 def generate_agent_reply(prompt: str) -> str:
     """
@@ -161,9 +231,15 @@ def generate_agent_reply(prompt: str) -> str:
             logger.warning("LLM generated empty response, using fallback")
             response = "Can you explain that again?"
         
+        if not response or len(response) < 3:
+            raw_response = _ollama_cli_call(prompt)
+            response = _clean_llm_response(raw_response)
+
         logger.info(f"Generated agent reply: {response}")
         return response
-        
+
+    
+
     except subprocess.TimeoutExpired:
         logger.error("LLM timeout while generating reply")
         return "Sorry, can you repeat that?"
