@@ -178,75 +178,112 @@ def _ollama_cli_call(prompt: str) -> str:
     return stdout.strip()
 
 
+# def generate_agent_reply(prompt: str) -> str:
+#     """
+#     Use LLM to generate human-like victim response
+    
+#     Args:
+#         prompt: The constructed prompt for the LLM
+        
+#     Returns:
+#         Generated response text
+#     """
+#     try:
+#         process = subprocess.Popen(
+#             ["ollama", "run", settings.LLM_MODEL],
+#             stdin=subprocess.PIPE,
+#             stdout=subprocess.PIPE,
+#             stderr=subprocess.PIPE,
+#             text=True,
+#             encoding="utf-8",
+#             errors="ignore"
+#         )
+        
+#         stdout, stderr = process.communicate(prompt, timeout=settings.LLM_TIMEOUT)
+        
+#         if stderr:
+#             logger.warning(f"LLM stderr: {stderr}")
+        
+#         # Clean and validate output
+#         response = stdout.strip()
+        
+#         # Remove any AI self-references
+#         response = re.sub(
+#             r"(as an ai|i am an ai|language model|i cannot|i can't|i'm an assistant)",
+#             "",
+#             response,
+#             flags=re.IGNORECASE
+#         )
+        
+#         # Remove quotes if LLM wrapped the response
+#         response = response.strip('"\'')
+        
+#         # Take only first 1-2 sentences
+#         sentences = re.split(r'[.!?]+', response)
+#         response = '. '.join(sentences[:2]).strip()
+        
+#         # Ensure it's not too long
+#         if len(response) > 250:
+#             response = response[:250].rsplit(' ', 1)[0] + "..."
+        
+#         # Fallback if empty
+#         if not response or len(response) < 3:
+#             logger.warning("LLM generated empty response, using fallback")
+#             response = "Can you explain that again?"
+        
+#         if not response or len(response) < 3:
+#             raw_response = _ollama_cli_call(prompt)
+#             response = _clean_llm_response(raw_response)
+
+#         logger.info(f"Generated agent reply: {response}")
+#         return response
+
+    
+
+#     except subprocess.TimeoutExpired:
+#         logger.error("LLM timeout while generating reply")
+#         return "Sorry, can you repeat that?"
+        
+#     except Exception as e:
+#         logger.error(f"Error generating reply: {str(e)}")
+#         return "I didn't understand. Can you say that differently?"
+
+
 def generate_agent_reply(prompt: str) -> str:
-    """
-    Use LLM to generate human-like victim response
-    
-    Args:
-        prompt: The constructed prompt for the LLM
-        
-    Returns:
-        Generated response text
-    """
     try:
-        process = subprocess.Popen(
-            ["ollama", "run", settings.LLM_MODEL],
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            encoding="utf-8",
-            errors="ignore"
+        response = requests.post(
+            "https://openrouter.ai/api/v1/chat/completions",
+            headers={
+                "Authorization": "Bearer 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",
+                "Content-Type": "application/json",
+                "HTTP-Referer": "https://honey-pot-ai-agent-zcng.onrender.com/",  # required
+                "X-Title": "Agentic Scam Honeypot",
+            },
+            json={
+                "model": "meta-llama/llama-3-8b-instruct",
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": "You are a real human scam victim. Be confused, cooperative, and natural."
+                    },
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ],
+                "temperature": 0.7,
+                "max_tokens": 80,
+            },
+            timeout=settings.LLM_TIMEOUT,
         )
-        
-        stdout, stderr = process.communicate(prompt, timeout=settings.LLM_TIMEOUT)
-        
-        if stderr:
-            logger.warning(f"LLM stderr: {stderr}")
-        
-        # Clean and validate output
-        response = stdout.strip()
-        
-        # Remove any AI self-references
-        response = re.sub(
-            r"(as an ai|i am an ai|language model|i cannot|i can't|i'm an assistant)",
-            "",
-            response,
-            flags=re.IGNORECASE
-        )
-        
-        # Remove quotes if LLM wrapped the response
-        response = response.strip('"\'')
-        
-        # Take only first 1-2 sentences
-        sentences = re.split(r'[.!?]+', response)
-        response = '. '.join(sentences[:2]).strip()
-        
-        # Ensure it's not too long
-        if len(response) > 250:
-            response = response[:250].rsplit(' ', 1)[0] + "..."
-        
-        # Fallback if empty
-        if not response or len(response) < 3:
-            logger.warning("LLM generated empty response, using fallback")
-            response = "Can you explain that again?"
-        
-        if not response or len(response) < 3:
-            raw_response = _ollama_cli_call(prompt)
-            response = _clean_llm_response(raw_response)
 
-        logger.info(f"Generated agent reply: {response}")
-        return response
+        response.raise_for_status()
+        text = response.json()["choices"][0]["message"]["content"]
+        return _clean_llm_response(text)
 
-    
-
-    except subprocess.TimeoutExpired:
-        logger.error("LLM timeout while generating reply")
-        return "Sorry, can you repeat that?"
-        
     except Exception as e:
-        logger.error(f"Error generating reply: {str(e)}")
-        return "I didn't understand. Can you say that differently?"
+        logger.error(f"LLM error: {e}")
+        return "Sorry, I’m not understanding. Can you explain again?"
 
 
 def determine_conversation_stage(
