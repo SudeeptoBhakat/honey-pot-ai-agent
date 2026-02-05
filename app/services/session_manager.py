@@ -1,8 +1,8 @@
 import logging
 from typing import Dict, Optional
 from datetime import datetime, timedelta
-from models.schemas import SessionData, Message, ExtractedIntelligence
-from core.config import settings
+from app.models.schemas import SessionData, Message, ExtractedIntelligence
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 

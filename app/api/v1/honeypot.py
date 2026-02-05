@@ -2,22 +2,22 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException, Header
 from typing import Optional
 
-from models.schemas import HoneypotRequest, HoneypotResponse, Message
-from core.security import verify_api_key
-from services.ai_service import predict_scam
-from services.extractor import extract_entities
-from services.conversation_engine import (
+from app.models.schemas import HoneypotRequest, HoneypotResponse, Message
+from app.core.security import verify_api_key
+from app.services.ai_service import predict_scam
+from app.services.extractor import extract_entities
+from app.services.conversation_engine import (
     build_prompt,
     generate_agent_reply,
     determine_conversation_stage
 )
-from services.session_manager import session_manager
-from services.callback_service import (
+from app.services.session_manager import session_manager
+from app.services.callback_service import (
     should_send_callback,
     send_final_result,
     build_agent_notes
 )
-from core.config import settings
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 

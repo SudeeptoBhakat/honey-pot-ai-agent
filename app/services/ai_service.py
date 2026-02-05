@@ -1,5 +1,5 @@
 import logging
-from services.llm_service import llm_fraud_classification
+from app.services.llm_service import llm_fraud_classification
 from typing import Dict, List
 
 logger = logging.getLogger(__name__)

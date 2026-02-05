@@ -1,6 +1,6 @@
 from fastapi import Request, HTTPException, status
 from fastapi.security import APIKeyHeader
-from core.config import settings
+from app.core.config import settings
 import logging
 
 logger = logging.getLogger(__name__)
