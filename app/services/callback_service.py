@@ -1,6 +1,6 @@
 import requests
 import logging
-from models.schemas import FinalResultPayload, SessionData
+from app.models.schemas import FinalResultPayload, SessionData
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
