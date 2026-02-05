@@ -16,6 +16,8 @@ class Settings:
     LLM_MODEL: str = os.getenv("LLM_MODEL", "llama3")
     LLM_TIMEOUT: int = 40
     
+    OPENROUTER_API_KEY: str = os.gotenv("OPENROUOTER_API_KEY")
+
     # Session Configuration
     SESSION_TIMEOUT_MINUTES: int = 30
     

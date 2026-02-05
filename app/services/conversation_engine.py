@@ -254,9 +254,9 @@ def generate_agent_reply(prompt: str) -> str:
         response = requests.post(
             "https://openrouter.ai/api/v1/chat/completions",
             headers={
-                "Authorization": "Bearer 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",
+                "Authorization": f"Bearer {settings.OPENROUTER_API_KEY}",
                 "Content-Type": "application/json",
-                "HTTP-Referer": "https://honey-pot-ai-agent-zcng.onrender.com/",  # required
+                "HTTP-Referer": "https://your-project-name",  # required
                 "X-Title": "Agentic Scam Honeypot",
             },
             json={
